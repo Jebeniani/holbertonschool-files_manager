@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Queue from 'bull';
 import dbClient from '../utils/db';
+import { checkAuth, findUserById } from '../utils/helpers';
 
 class UsersController {
   static async postNew(request, response) {
@@ -17,6 +18,14 @@ class UsersController {
     const createdUser = { id: resultObj.ops[0]._id, email: resultObj.ops[0].email };
     await usQueue.add({ userId: createdUser.id });
     return response.status(201).json(createdUser);
+  }
+
+  static async getMe(request, response) {
+    const userId = await checkAuth(request);
+    if (!userId) return response.status(401).json({ error: 'Unauthorized' });
+    const user = await findUserById(userId);
+    if (!user) return response.status(401).json({ error: 'Unauthorized' });
+    return response.json({ id: user._id, email: user.email });
   }
 }
 
